@@ -1,0 +1,29 @@
+classDiagram
+    class Trazable { <<interface>> +codigo() String +generarCodigo(prefijo, n)$ String }
+    class Producto { <<sealed interface>> }
+    class FlorCorte { <<record>> }
+    class LotePescado { <<record>> }
+    class InsumoFrio { <<record>> +costo() double }
+    Trazable <|-- Producto
+    Producto <|.. FlorCorte
+    Producto <|.. LotePescado
+    Producto <|.. InsumoFrio
+
+    class FabricaProductos { +crear(TipoProducto, DatosProducto)$ Producto }
+    FabricaProductos ..> Producto : crea
+    FabricaProductos ..> TipoProducto
+
+    class ReglaAlerta { <<functional interface>> +evaluar(LecturaFrio) Optional~Alerta~ }
+    class ObservadorAlertas { <<functional interface>> +notificar(Alerta) }
+    class Reglas { +temperaturaFueraRango()$ +rupturaProlongada()$ +puertaAbierta()$ }
+    class ConfiguracionFrio { <<enum singleton>> }
+    class MotorAlertas { +agregarRegla() +suscribir() +procesar(LecturaFrio) int }
+    class Alerta { <<record>> }
+    class FabricaObservadores { +crear(TipoObservador)$ ObservadorAlertas }
+
+    Reglas ..|> ReglaAlerta : lambdas
+    Reglas ..> ConfiguracionFrio : lee umbrales
+    MotorAlertas o-- ReglaAlerta : agregación
+    MotorAlertas o-- ObservadorAlertas : agregación
+    MotorAlertas ..> Alerta : publica
+    FabricaObservadores ..> ObservadorAlertas : crea
