@@ -1,29 +1,84 @@
+%%{init: {"theme":"base","themeVariables":{"fontSize":"18px","primaryColor":"#EAF2FB","primaryBorderColor":"#1F4E79","lineColor":"#333"}}}%%
 classDiagram
-    class Trazable { <<interface>> +codigo() String +generarCodigo(prefijo, n)$ String }
-    class Producto { <<sealed interface>> }
-    class FlorCorte { <<record>> }
-    class LotePescado { <<record>> }
-    class InsumoFrio { <<record>> +costo() double }
-    Trazable <|-- Producto
-    Producto <|.. FlorCorte
-    Producto <|.. LotePescado
-    Producto <|.. InsumoFrio
+direction TB
 
-    class FabricaProductos { +crear(TipoProducto, DatosProducto)$ Producto }
-    FabricaProductos ..> Producto : crea
-    FabricaProductos ..> TipoProducto
+class Trazable {
+  <<interface>>
+  +codigo() String
+  +generarCodigo(prefijo, n)$ String
+}
+class Producto {
+  <<sealed interface>>
+}
+class FlorCorte {
+  <<record>>
+}
+class LotePescado {
+  <<record>>
+}
+class InsumoFrio {
+  <<record>>
+  +costo() double
+}
+class TipoProducto {
+  <<enum>>
+}
+class FabricaProductos {
+  +crear(TipoProducto, DatosProducto)$ Producto
+}
+class FabricaObservadores {
+  +crear(TipoObservador)$ ObservadorAlertas
+}
+class Reglas {
+  +temperaturaFueraRango()$ ReglaAlerta
+  +rupturaProlongada()$ ReglaAlerta
+  +puertaAbierta()$ ReglaAlerta
+}
+class ConfiguracionFrio {
+  <<enum singleton>>
+}
+class ReglaAlerta {
+  <<functional interface>>
+  +evaluar(LecturaFrio) Optional~Alerta~
+}
+class ObservadorAlertas {
+  <<functional interface>>
+  +notificar(Alerta)
+}
+class MotorAlertas {
+  -reglas List~ReglaAlerta~
+  -observadores List~ObservadorAlertas~
+  +agregarRegla(ReglaAlerta)
+  +suscribir(ObservadorAlertas)
+  +procesar(LecturaFrio) int
+}
+class Alerta {
+  <<record>>
+}
+class TipoAlerta {
+  <<enum>>
+  TEMPERATURA_FUERA_RANGO
+  RUPTURA_PROLONGADA
+  PUERTA_ABIERTA
+}
+class LecturaFrio {
+  <<record>>
+}
 
-    class ReglaAlerta { <<functional interface>> +evaluar(LecturaFrio) Optional~Alerta~ }
-    class ObservadorAlertas { <<functional interface>> +notificar(Alerta) }
-    class Reglas { +temperaturaFueraRango()$ +rupturaProlongada()$ +puertaAbierta()$ }
-    class ConfiguracionFrio { <<enum singleton>> }
-    class MotorAlertas { +agregarRegla() +suscribir() +procesar(LecturaFrio) int }
-    class Alerta { <<record>> }
-    class FabricaObservadores { +crear(TipoObservador)$ ObservadorAlertas }
+Trazable <|-- Producto : herencia de interfaz
+Producto <|.. FlorCorte : implementación
+Producto <|.. LotePescado : implementación
+Producto <|.. InsumoFrio : implementación
 
-    Reglas ..|> ReglaAlerta : lambdas
-    Reglas ..> ConfiguracionFrio : lee umbrales
-    MotorAlertas o-- ReglaAlerta : agregación
-    MotorAlertas o-- ObservadorAlertas : agregación
-    MotorAlertas ..> Alerta : publica
-    FabricaObservadores ..> ObservadorAlertas : crea
+MotorAlertas o-- ReglaAlerta : agregación
+MotorAlertas o-- ObservadorAlertas : agregación
+Alerta *-- TipoAlerta : composición
+
+FabricaProductos ..> TipoProducto : dependencia
+FabricaProductos ..> Producto : crea
+FabricaObservadores ..> ObservadorAlertas : crea
+Reglas ..> ReglaAlerta : crea (lambdas)
+Reglas ..> ConfiguracionFrio : lee umbrales
+ReglaAlerta ..> Alerta : devuelve
+MotorAlertas ..> Alerta : publica
+MotorAlertas ..> LecturaFrio : procesa
